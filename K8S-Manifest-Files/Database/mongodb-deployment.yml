@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-deployment
+spec: 
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels: 
+        app: mongo
+    spec: 
+      containers:
+      - name: mongodb-container
+        image: mongo:4.4.6
+        command:
+            - "numactl"
+            - "--interleave=all"
+            - "mongod"
+            - "--wiredTigerCacheSizeGB"
+            - "0.1"
+            - "--bind_ip"
+            - "0.0.0.0"
+        ports:
+        - containerPort: 27017
+        env: 
+          - name: MONGO_INITDB_ROOT_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mongo-sec
+                key: username
+          - name: MONGO_INITDB_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongo-sec
+                key: password
+        volumeMounts:
+          - name: my-storage
+            mountPath: /data/db
+      volumes: 
+      - name: my-storage
+        persistentVolumeClaim:
+          claimName: mongo-pvc
